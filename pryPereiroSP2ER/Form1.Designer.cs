@@ -28,21 +28,58 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmPrincipal));
+            this.lblSeleccionarArch = new System.Windows.Forms.Label();
+            this.btnExaminar = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
+            this.lstMigracion = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
+            // 
+            // lblSeleccionarArch
+            // 
+            resources.ApplyResources(this.lblSeleccionarArch, "lblSeleccionarArch");
+            this.lblSeleccionarArch.Name = "lblSeleccionarArch";
+            // 
+            // btnExaminar
+            // 
+            resources.ApplyResources(this.btnExaminar, "btnExaminar");
+            this.btnExaminar.Name = "btnExaminar";
+            this.btnExaminar.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            resources.ApplyResources(this.button2, "button2");
+            this.button2.Name = "button2";
+            this.button2.UseVisualStyleBackColor = true;
+            // 
+            // lstMigracion
+            // 
+            this.lstMigracion.FormattingEnabled = true;
+            this.lstMigracion.Items.AddRange(new object[] {
+            resources.GetString("lstMigracion.Items")});
+            resources.ApplyResources(this.lstMigracion, "lstMigracion");
+            this.lstMigracion.Name = "lstMigracion";
             // 
             // frmPrincipal
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(742, 371);
+            this.Controls.Add(this.lstMigracion);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.btnExaminar);
+            this.Controls.Add(this.lblSeleccionarArch);
             this.Name = "frmPrincipal";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "GoodHard ";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
+
+        private System.Windows.Forms.Label lblSeleccionarArch;
+        private System.Windows.Forms.Button btnExaminar;
+        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.ListBox lstMigracion;
     }
 }
 
