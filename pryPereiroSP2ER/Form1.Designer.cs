@@ -45,6 +45,7 @@
             resources.ApplyResources(this.btnExaminar, "btnExaminar");
             this.btnExaminar.Name = "btnExaminar";
             this.btnExaminar.UseVisualStyleBackColor = true;
+            this.btnExaminar.Click += new System.EventHandler(this.btnExaminar_Click);
             // 
             // button2
             // 
