@@ -30,7 +30,7 @@ namespace pryPereiroSP2ER
                 {
                     var nombreArchivo = Path.GetFileName(dlg.FileName);
                     lstMigracion.Items.Add("- - - - - - - - - - - - - - - - - - - - - - - - - " + nombreArchivo + " - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-                    lstMigracion.Items.Add("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+                    lstMigracion.Items.Add("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - ");
 
                 }
             }
