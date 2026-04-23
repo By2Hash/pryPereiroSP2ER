@@ -14,6 +14,13 @@ namespace pryPereiroSP2ER
 {
     public partial class frmPrincipal : Form
     {
+        // Definición de las tablas conocidas: nombre de archivo (sin extensión) -> columnas fijas
+        private static readonly Dictionary<string, string[]> TablasConocidas = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Articulo",  new[] { "IdArticulo", "Nombre", "IdCategoria", "Precio" } },
+            { "Categoria", new[] { "IdCategoria", "Nombre" } }
+        };
+
         // Lista interna con rutas completas de los archivos seleccionados
         private readonly List<string> archivosSeleccionados = new List<string>();
 
@@ -32,7 +39,7 @@ namespace pryPereiroSP2ER
 
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
-                            foreach (var ruta in dlg.FileNames)
+                    foreach (var ruta in dlg.FileNames)
                     {
                         if (!File.Exists(ruta))
                             continue;
@@ -40,9 +47,7 @@ namespace pryPereiroSP2ER
                         if (!archivosSeleccionados.Contains(ruta))
                         {
                             archivosSeleccionados.Add(ruta);
-                            var nombreArchivo = Path.GetFileName(ruta);
-                            // Mostrar sólo el nombre para claridad, la ruta se guarda internamente
-                            lstMigracion.Items.Add("Añadido: " + nombreArchivo);
+                            lstMigracion.Items.Add("Añadido: " + Path.GetFileName(ruta));
                         }
                         else
                         {
@@ -76,7 +81,6 @@ namespace pryPereiroSP2ER
                 }
 
                 var rutaDb = dlg.FileName;
-
                 var conexion = new CConexion();
 
                 // Crear base si no existe
@@ -90,7 +94,19 @@ namespace pryPereiroSP2ER
                 foreach (var ruta in archivosSeleccionados.ToList())
                 {
                     var nombreArchivo = Path.GetFileName(ruta);
-                    var nombreTabla = MakeSafeTableName(Path.GetFileNameWithoutExtension(ruta));
+                    var nombreSinExt = Path.GetFileNameWithoutExtension(ruta); // "Articulo" o "Categoria"
+
+                    // ── Detectar qué tabla corresponde al archivo ──────────────
+                    string[] columnas;
+                    if (!TablasConocidas.TryGetValue(nombreSinExt, out columnas))
+                    {
+                        lstMigracion.Items.Add("Omitido: " + nombreArchivo +
+                            " — nombre no reconocido (se esperaba Articulo.txt o Categoria.txt)");
+                        continue;
+                    }
+
+                    // El nombre de tabla en Access = nombre del archivo sin extensión
+                    var nombreTabla = nombreSinExt;
 
                     try
                     {
@@ -101,52 +117,34 @@ namespace pryPereiroSP2ER
                             continue;
                         }
 
-                        // Detectar separador (priorizar ;, luego ,, luego tab)
+                        // Detectar separador usando la primera línea
                         char sep = DetectSeparator(lines[0]);
 
-                        var headers = SplitLineRespectingQuotes(lines[0], sep);
+                        // Construir DataTable con las columnas fijas de esta tabla
                         var dt = new DataTable();
+                        foreach (var col in columnas)
+                            dt.Columns.Add(col, typeof(string));
 
-                        foreach (var raw in headers)
+                        // Todas las líneas son datos (el .txt NO tiene fila de encabezado)
+                        foreach (var linea in lines)
                         {
-                            var colName = string.IsNullOrWhiteSpace(raw) ? "Columna" : raw.Trim();
-                            // evitar columnas duplicadas
-                            var unique = colName;
-                            int counter = 1;
-                            while (dt.Columns.Contains(unique))
-                            {
-                                unique = colName + "_" + counter;
-                                counter++;
-                            }
-                            dt.Columns.Add(unique, typeof(string));
-                        }
-
-                        for (int i = 1; i < lines.Length; i++)
-                        {
-                            if (string.IsNullOrWhiteSpace(lines[i]))
+                            if (string.IsNullOrWhiteSpace(linea))
                                 continue;
 
-                            var parts = SplitLineRespectingQuotes(lines[i], sep);
+                            var parts = SplitLineRespectingQuotes(linea, sep);
                             var row = dt.NewRow();
                             for (int c = 0; c < dt.Columns.Count; c++)
-                            {
-                                if (c < parts.Length)
-                                    row[c] = parts[c].Trim();
-                                else
-                                    row[c] = string.Empty;
-                            }
+                                row[c] = c < parts.Length ? parts[c].Trim() : string.Empty;
+
                             dt.Rows.Add(row);
                         }
 
                         var ok = conexion.CreateTableFromDataTable(rutaDb, nombreTabla, dt);
                         if (ok)
-                        {
-                            lstMigracion.Items.Add("Migrado: " + nombreArchivo + " -> Tabla: " + nombreTabla);
-                        }
+                            lstMigracion.Items.Add("Migrado: " + nombreArchivo +
+                                " -> Tabla [" + nombreTabla + "] (" + dt.Rows.Count + " registros)");
                         else
-                        {
                             lstMigracion.Items.Add("Error en " + nombreArchivo + ": " + conexion.ObtenerError());
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -158,42 +156,20 @@ namespace pryPereiroSP2ER
             } // using SaveFileDialog
         }
 
+        // -------------------------------------------------------
         // Helpers
-
-        // Crea un nombre de tabla seguro (quita caracteres inválidos y limita longitud razonable)
-        private string MakeSafeTableName(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                return "Tabla";
-
-            var s = raw.Trim();
-            var invalid = Path.GetInvalidFileNameChars().Concat(new[] { ' ', '-', '.' }).ToArray();
-            foreach (var ch in invalid)
-                s = s.Replace(ch.ToString(), "_");
-
-            if (s.Length > 60)
-                s = s.Substring(0, 60);
-
-            // Asegurar que no quede vacío
-            if (string.IsNullOrWhiteSpace(s))
-                s = "Tabla";
-
-            return s;
-        }
+        // -------------------------------------------------------
 
         // Detecta separador más probable en una línea (prioriza ;, luego ,, luego tab)
         private char DetectSeparator(string sample)
         {
-            if (sample.Contains(";"))
-                return ';';
-            if (sample.Contains(","))
-                return ',';
-            if (sample.Contains("\t"))
-                return '\t';
-            return ','; // fallback
+            if (sample.Contains(";")) return ';';
+            if (sample.Contains(",")) return ',';
+            if (sample.Contains("\t")) return '\t';
+            return ',';
         }
 
-        // Splits a line by separator respecting double quotes (simple parser).
+        // Divide una línea por el separador respetando comillas dobles.
         private string[] SplitLineRespectingQuotes(string line, char separator)
         {
             var result = new List<string>();
@@ -202,15 +178,14 @@ namespace pryPereiroSP2ER
 
             for (int i = 0; i < line.Length; i++)
             {
-                var c = line[i];
+                char c = line[i];
 
                 if (c == '"')
                 {
-                    // manejar comillas dobles escapadas ""
                     if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
                     {
                         current.Append('"');
-                        i++; // saltar la segunda comilla
+                        i++;
                     }
                     else
                     {
@@ -227,6 +202,7 @@ namespace pryPereiroSP2ER
                     current.Append(c);
                 }
             }
+
             result.Add(current.ToString());
             return result.ToArray();
         }
