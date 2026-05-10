@@ -88,6 +88,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="1455554839_line-60_icon-icons.com_53339.ico" />
+    <Content Include="Archivos txt\Articulo.txt" />
+    <Content Include="Archivos txt\Categoria.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

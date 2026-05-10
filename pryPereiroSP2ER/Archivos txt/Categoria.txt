@@ -1,0 +1,2 @@
+1; Procesador
+2; Disco Rigido
